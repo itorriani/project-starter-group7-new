@@ -13,7 +13,6 @@ export class DBTransaction
         this.workToDo = workOnDb;
     }
 
-    // Attempt to to the work in the 
     run() : void
     {
         this.db.exec('BEGIN');        
