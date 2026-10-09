@@ -60,10 +60,16 @@ export class DAGComputeService implements ComputeService {
       return value;
     }
 
+    const precomputed = Object.fromEntries(
+      startingKeys
+        .filter((key) => key in cache)
+        .map((key) => [key, cache[key]])
+    );
+
     const computed = calculate(dag, startingKeys, lookup, cache);
     this.updateCache(sheetId, computed);
 
-    return computed;
+    return {...precomputed, ...computed };
   }
 
   // Helper methods:
