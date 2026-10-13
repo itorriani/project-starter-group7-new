@@ -11,7 +11,7 @@ import { IntrinsicValue, PendingValue, Value } from "@poly-sheets/types";
 import { parseKey } from "@poly-sheets/types";
 import { type Connection, createConnection, sendMessage } from "./websocket.ts";
 
-type OnChangeHandler = (ref: AbsoluteReference, value: Value) => void
+type OnChangeHandler = (ref: AbsoluteReference, valueOrFormula: Value | string ) => void
 
 export function wsHandleChange(
   event: Event,
