@@ -8,23 +8,16 @@
   let error = $state("");
   const ROW_CHUNK_SIZE = 50;
 
-  // TODO: [Assignment 3] Declare variables `rowsLoaded`
-  //       and `totalRows`. Compute them from the `sheet`
-  //       data. Because we need these values to change
-  //       whenever the sheet data changes, you must
-  //       wrap the expressions with the `$derived()` rune:
-  //
+
   let rowsLoaded = $derived(sheet.cells.length);
   let totalRows = $derived(sheet.nrows);
 
-  // path: /app/:id  --> ["", "app", "#######-####-..."]
+  
   const path = location.pathname.split("/");
 
   let sheetId = $state(path[2]);
 
   $effect(() => {
-
-    //const url = `/api/sheets/${sheetId}`;
 
     //incorporate limit
     const url = `/api/sheets/${sheetId}?limit=${ROW_CHUNK_SIZE}`;
@@ -47,12 +40,6 @@
       .catch((err: Error) => {
         error = err.message;
       });
-
-    // ======== Assignment 3 ========
-    //
-    // TODO: Modify the above `fetch` call by adding the `limit`
-    //       query parameter to the `url`. Use the value of
-    //       `ROW_CHUNK_SIZE` as the limit.
   })
 
   let wsConnection: Connection | undefined;
@@ -103,9 +90,7 @@
         </tr>
       </thead>
       <tbody onchange={ (event: Event) => {
-        // TODO: [Assignment 3] handle change events by calling `handleChange`
-        //       (see the <script> at end of this file)
-
+        handleChange(event, sheetId, sheet)
         // TODO: [Assignment 4] if wsConnection is set, call `wshandleChange`
         //       instead of handleChange
 
@@ -114,11 +99,11 @@
         //       if `showFormulas` is false, and class="show-formulas"
         //       if `showFormulas` is true.
       }}>
-        {#each sheet.cells as row, i}
+        {#each sheet.cells as row, r}
         <tr>
-          <th>{i}</th>
-          {#each row as col}
-            <td>{col.toString()}</td>
+          <th>{r}</th>
+          {#each row as value, c}
+            <Cell row={r} column={c} {value} />
           {/each}
         </tr>
         {/each}
@@ -203,82 +188,36 @@
     sheetId: string,
     sheet: Sheet
   ): Promise<SheetPatch> {
-    // ======== Assignment 3 ========
 
-    // TODO: Find the `<input>` element which changed to trigger
-    //       this event. Hint: you will find it in the Event object,
-    //       though you will need to use `as HTMLInputElement` to
-    //       convince TypeScript it's actually an <input>
-    //
-    // const input = /* get from event */ as HTMLInputElement;
+    const input = event.target as HTMLInputElement;
+    const url = `/api/sheets/${sheetId}/cells`;
+    const value = Value.fromUserInput(input.value);
+    const key = input.name as RCKey;
+    const ref: AbsoluteReference = parseKey(key);
+    const oldValue: Value = sheet.cells[ref.row][ref.column];
 
-    // TODO: Compose the correct URL for our PATCH request
-    //
-    // const url = `/api/...`;
-
-    // TODO: Define `value`, the string or number entered by the user.
-    //       This is trickier than it sounds. `input.value` will
-    //       contain the value as a string. But if the user enters
-    //       a number, we want to convert it to a number. Hint:
-    //       the static method Value.fromUserInput can handle
-    //       this conversion for you
-    //
-    //  const value = ...
-
-    // TODO: Define `key`, which identifies this cell in
-    //       sparse patch format. This is made easier by way
-    //       we named our `<input>` elements. Basically, the
-    //       key is the input's name.
-    //
-    // const key = /* get name from input */ as RCKey;
-
-    // TODO: compute `ref` from the `key`. An AbsoluteReference
-    //       gives us the row and column of the cell.
-    //       We will need this when we update the local state.
-    //       Hint: look at the `parseKey()` function imported above
-    //
-    // const ref: AbsoluteReference = ...
-
-    // TODO: Save the old value of the cell referenced by `ref`.
-    //       We will need this in case the patch fails on the
-    //       server.
-    //
-    // const oldValue: Value = ...
-
-    // TODO: Build the `Sparse<Value>` object, which we
-    //       will send as the body of our request. It will have
-    //       just one entry, mapping `key`: `value`.
-    //
-    // const patch: Sparse<Value> = ...;
-
-    // TODO: Let the user know that their change is pending
-    //       communication with the server. Do this by creating
-    //       a `PendingValue` from `value` and assigning the cell
-    //       referenced by `ref` in `sheet.cells`
-    //
-    // ...
+    
+    const patch: Sparse<Value> = { [key]: value };
+    sheet.cells[ref.row][ref.column] = new PendingValue(value); //let user know req is pending
 
     return fetch(url, {
-      // TODO: build the options for the request. Fill in the
-      //       following:
-      //
-      // method: ...,
-      // headers: {
-      //    ...
-      // },
-      // body: ...
+  
+      method: "PATCH",
+      headers: {
+          "Content-Type": "application/json"
+       },
+       body: JSON.stringify(patch)
     }).then((res) => {
-      // TODO: check status, return JSON if ok, else throw
+      if (!res.ok){
+        throw new Error(`PATCH failed with status ${res.status}`);
+      }
+      return res.json();
     }).then((json: unknown) => {
-      // TODO: update the value of the one cell in sheet.cells
-      //
-      // ...
+      sheet.cells[ref.row][ref.column] = value;
+      return json as SheetPatch;
     }).catch((err) => {
-      // TODO: if the request failed, we want to remove
-      //       the value which the user entered, and restore
-      //       `input.value` from `oldValue`
-      //
-      // ...
+      sheet.cells[ref.row][ref.column] = oldValue;
+      input.value = String(oldValue);
       throw err;
     })
   }
