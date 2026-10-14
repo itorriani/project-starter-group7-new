@@ -32,8 +32,7 @@ export class InMemorySheetService implements SheetService {
     id: string,
     maxRows?: number
   ): Sheet | undefined {
-    // TODO: [Assignment 1] get the sheet from storedSheets
-    //
+  
     const retrievedSheet = this.storedSheets[id]; //accesss the sheet given id
 
     //check if retrieved sheet doesn't exist or maxrows was not defined
@@ -44,7 +43,7 @@ export class InMemorySheetService implements SheetService {
           return { ...retrievedSheet, cells: limit };
        }// 
 
-   // return retrievedSheet; //return it
+
 
     // ======== Assignment 3 =========
 
@@ -66,22 +65,6 @@ export class InMemorySheetService implements SheetService {
     startRow: number = 0,
     maxRows?: number
   ): MoreRows | undefined {
-    // ======== Assignment 3 ========
-
-    // TODO: Declare variable `sheet` and initialize it by
-    //       getting the correct sheet from storedSheets
-    //
-    // const sheet = ...
-    //
-    // TODO: If the sheet does not exist, return undefined
-    //
-    // if (!sheet) return sheet;
-    //
-    // TODO: Replace the following empty array with rows
-    //       of cells from sheet.cells, starting with row
-    //       `start`, and continuing for at most `limit`
-    //       rows. If `limit` is undefined, continue to
-    //       the end of `sheet.cells`
 
     const sheet = this.storedSheets[id] // get the sheet with the corresponding id
 
@@ -122,19 +105,13 @@ export class InMemorySheetService implements SheetService {
     id: string,
     patch: Sparse<Value>
   ): Sparse<Value> | undefined {
-    // TODO: Declare variable `sheet` and initialize it by
-    //       getting the correct sheet from storedSheets
-    //
-    // const sheet = ...
-    //
-    // TODO: If the sheet does not exist, return undefined
-    //
-    // if (!sheet) return sheet;
 
+    const sheet = this.storedSheets[id]
+    if (!sheet) return undefined;
+    
     Object.entries(patch).forEach(([key, value]) => {
       const {row, column} = parseKey(key as RCKey);
-      // TODO: update the value of the cell addressed
-      //       by this key
+      sheet.cells[row][column] = value;
     });
 
     return patch;
