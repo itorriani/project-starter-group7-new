@@ -1,6 +1,6 @@
 import express, { Request, Response, Router } from "express";
 import { SheetService }  from "sheet-svc";
-import { RCKey, Sparse, Value, parseKey } from "@poly-sheets/types";
+import { RCKey, SerializedValue, Sparse, Value, parseKey } from "@poly-sheets/types";
 // TODO: [Assignment 6] add this import:
 //
 // import { ComputeService } from "compute-svc";
@@ -40,18 +40,6 @@ function createRouter(
         return res.status(404).send({ error: `Sheet ${id} not found.`});
       }
 
-      // ======== Assignment 3 ========
-
-      // TODO: at the top of the function, declare the variable
-      //       `limit`. Initialize it to the string that was
-      //       passed in as the `?limit=` query parameter, or
-      //       undefined if there was none
-      //
-      // const limit = ...
-
-      // TODO: modify your call to `sheetSvc.get`, adding the
-      //       second parameter if `limit` is defined. (Hint:
-      //       use parseInt to convert a string to a number)
 
     // ======== Assignment 6 ========
 
@@ -112,25 +100,20 @@ function createRouter(
     });
 
     router.patch("/sheets/:id/cells", (req: Request, res: Response) => {
-      // ======== Assignment 3 ========
+      const id = req.params.id as string;
+      const patch = Object.fromEntries(
+        Object.entries(req.body).map(([key, value]) => [key, Value.fromJSON(value as SerializedValue) ])
+      ) as Sparse<Value>;
 
-      // TODO: Get the `id` parameter from the Request
-      //
-      // const id = ...
+      const result = svc.updateSheetValues(id, patch);
 
-    // TODO: Call the `updateSheetValues` service method
-    //       passing it the sparse data that was in the
-    //       body of the Request. You will need to convert
-    //       any SerializedValues (in JSON) into Values (in memory).
-      //       Save the result so we can check it later.
-      //
-      // const result = ...
+      if (!result) {
+        return res.status(404).send({ error: `Sheet ${id} not found.` });
+      }
 
-      // TODO: If there was an error (`result` is undefined)
-      //       send an error response. Otherwise, send the
-      //       `result` object as JSON in the body of the reponse
-
-    // ======== Assignment 6 ========
+      return res.send(result);
+    });
+        // ======== Assignment 6 ========
 
     // If the updateSheetValues finds any formulas in the patch,
     // it separates the formulas from the values and returns an
@@ -173,8 +156,6 @@ function createRouter(
     // } else {
     //    res.send(values);
     // }
-
-    });
 
   return router;
 }
