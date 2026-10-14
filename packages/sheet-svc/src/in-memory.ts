@@ -36,7 +36,15 @@ export class InMemorySheetService implements SheetService {
     //
     const retrievedSheet = this.storedSheets[id]; //accesss the sheet given id
 
-    return retrievedSheet; //return it
+    //check if retrieved sheet doesn't exist or maxrows was not defined
+    if (!retrievedSheet || maxRows == undefined) {
+       return retrievedSheet } else
+       {
+          const limit = retrievedSheet.cells.slice(0,maxRows);
+          return { ...retrievedSheet, cells: limit };
+       }// 
+
+   // return retrievedSheet; //return it
 
     // ======== Assignment 3 =========
 
@@ -49,6 +57,8 @@ export class InMemorySheetService implements SheetService {
     //    3. return the `fullSheet`, but replace the `cells` field with
     //       the shorter array. Leave all other fields (including `nrows`)
     //       unchanged.
+
+
   }
 
   getCellsInRange(
@@ -73,9 +83,24 @@ export class InMemorySheetService implements SheetService {
     //       rows. If `limit` is undefined, continue to
     //       the end of `sheet.cells`
 
-    const rows: Value[][] = [];
+    const sheet = this.storedSheets[id] // get the sheet with the corresponding id
 
-    return { rows, start : startRow, count: rows.length }
+    if (!sheet) { return undefined; } //check if it exists
+
+    let endRow;
+
+    //set range of rows based on if maxRows is specified
+    if (maxRows == undefined) 
+      { 
+        endRow = undefined
+      } else {
+        //calculate the rate based o the maxRow
+        endRow = startRow + maxRows
+      }
+
+    const rows = sheet.cells.slice(startRow, endRow);
+
+    return { rows, start: startRow, count: rows.length };
   }
 
   getCellValue(

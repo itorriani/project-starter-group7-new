@@ -1,0 +1,27 @@
+Increment 2 Analysis
+====================
+
+Question 1: What is the Content-Type of the response?
+------------------------------------------------------
+The Content-Type of the GET /api/sheets/:id response is:
+  application/json; charset=utf-8
+
+This is set automatically by Express when you call res.send() with a JavaScript object.
+
+Question 2: JSON encoding overhead vs CSV, and sparse data encoding
+--------------------------------------------------------------------
+JSON encoding has significantly more overhead than CSV. Each cell value in JSON
+is wrapped in a key-value pair with a row/column key (e.g. "r0c0", "r0c1"),
+plus all the surrounding braces, brackets, and quotes. CSV just separates values
+with commas and newlines, so it is much more compact for dense data.
+
+For sparsely populated spreadsheets (where most cells are empty), the overhead
+gets worse. JSON still encodes every empty cell as an empty string or null in the
+cells array, so a 50x10 sheet with only 5 filled cells still sends all 500 cell
+slots across the wire.
+
+A better encoding for sparse data would be to only send the cells that actually
+have values, using a map/dictionary keyed by position (e.g. { "r2c3": "hello",
+"r5c1": 42 }). This way empty cells take up zero space, and the payload size
+scales with the number of filled cells rather than the total grid size. This is
+sometimes called a "sparse matrix" representation.

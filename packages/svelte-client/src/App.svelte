@@ -14,8 +14,8 @@
   //       whenever the sheet data changes, you must
   //       wrap the expressions with the `$derived()` rune:
   //
-  // let rowsLoaded = $derived( /* code here  */ );
-  // let totalRows = $derived( /*  code here */ );
+  let rowsLoaded = $derived(sheet.cells.length);
+  let totalRows = $derived(sheet.nrows);
 
   // path: /app/:id  --> ["", "app", "#######-####-..."]
   const path = location.pathname.split("/");
@@ -24,7 +24,10 @@
 
   $effect(() => {
 
-    const url = `/api/sheets/${sheetId}`;
+    //const url = `/api/sheets/${sheetId}`;
+
+    //incorporate limit
+    const url = `/api/sheets/${sheetId}?limit=${ROW_CHUNK_SIZE}`;
 
     fetch(url)
       .then((res: Response) => {
@@ -34,13 +37,11 @@
         return res.json();
       })
       .then((json: unknown) => {
-        const { cells } = json as { cells: SerializedValue[][] };
+        const { cells, nrows, columns, name } = json as { cells: SerializedValue[][], nrows: number, columns: string[], name: string };
+
         const cellValues = convertCellValues(cells);
 
-        sheet = {
-          ...sheet,
-          cells: cellValues,
-        };
+          sheet = { ...sheet, name, columns, nrows, cells: cellValues };
 
       })
       .catch((err: Error) => {
@@ -137,27 +138,16 @@
     {/if}
   </section>
   <footer>
-    <span>{ sheet.name }</span>
-    <!-- ======== Assignment 3 ========
-
-      TODO: Add a second <span> here, containing either
-
-      {rowsLoaded}/{totalRows} rows loaded
-          OR
-      {totalRows} rows
-
-            depending on wheter all the rows have been
-            loaded or not. Hint: look at the Svelte
-            docs for  {#if } ... {:else} ... {/if}
-
-      TODO: Add a <button> inside the <span>. It
-            should only be displayed if there are
-            more rows waiting to be loaded. When
-            the button is clicked, call the
-            `loadMoreRows` function defined below
-
-            <button onclick={ /* event handler */ }>Load more</button>
-    -->
+    <span>{ sheet.name } </span>
+    <span>
+      {#if rowsLoaded < totalRows}
+        {rowsLoaded}/{totalRows} rows loaded
+        <!-- button for more rows -->
+        <button onclick={() => loadMoreRows(sheetId, sheet, ROW_CHUNK_SIZE)}>Load More Rows</button>
+      {:else}
+        {totalRows} rows
+      {/if}
+    </span>
   </footer>
 </main>
 
@@ -186,35 +176,25 @@
     sheet: Sheet,
     maxRows: number
   ): Promise<MoreRows> {
-    // ======== Assignment 3 ========
 
-    // TODO: compute the path portion and query parameters
-    //       of the URL here, and replace the empty strings
-    //       below:
-
-    const path = ``;
-    const start = ``;
-    const limit = ``;
+    //seperate parts of the url that are relevant
+    const path = `sheets/${sheetId}/cells`;
+    const start = `start=${sheet.cells.length}`;
+    const limit = `limit=${maxRows}`;
 
     return fetch(`/api/${path}?${start}&${limit}`)
       .then((res: Response) => {
-        // TODO: check the response status. If it's not
-        //       correct, throw an Error. On success,
-        //       return the body as a JSON object
+        if (!res.ok) {
+          throw new Error(`Failed to load rows`);
+        }
+        return res.json();
       })
       .then((json: unknown) => {
-        const { rows, count } = json as {count: number, rows: SerializedValue[][]};
-        // TODO: add the rows to the end of the sheet's cells.
-        //       It's fine (and in fact preferable) if you
-        //       mutate the cells array. As with the $effect you
-        //      wrote above, be sure to convert the row data to Values.
-
-        // ======== Assignment 6 ========
-        //
-        // TODO: If the json includes `formulas`, merge them with
-        //       the Sparse<string> `sheet.formulas`. DO NOT create
-        //       a new object and assign that to sheet.formulas.
-        //       Hint: look up the Object.assign() JavaScript function.
+        const moreRows = json as { count: number, rows: SerializedValue[][] };
+        const newRows = convertCellValues(moreRows.rows);
+        for (const row of newRows) {
+          sheet.cells.push(row);
+        }
       });
   }
 
