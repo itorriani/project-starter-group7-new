@@ -1,0 +1,30 @@
+{
+  "name": "compute",
+  "version": "1.0.0",
+  "description": "web server for poly-sheets",
+  "keywords": [
+    "web",
+    "express",
+    "spreadsheet"
+  ],
+  "license": "BSD-3-Clause",
+  "author": "kubiak@calpoly.edu",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "npx tsc -b && echo Done",
+    "start": "node -r source-map-support/register dist/index.js",
+    "check": "npx tsc -noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@poly-sheets/types": "^1.0.0",
+    "@poly-sheets/formula": "^1.0.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
+  }
+}

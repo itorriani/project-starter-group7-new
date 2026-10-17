@@ -36,7 +36,9 @@ export function readCSV(
 
     Object.entries(data).forEach(([column, s]) => {
       let primitive : PrimitiveType = s;
-      if( typeof s === "string" ) {
+      if( typeof s === "string"
+        && s.match(/^[-+]?(\d+|\.\d+|\d+\.\d*)$/)
+      ) {
         const parsed : number = parseFloat(s);
         if( !Number.isNaN( parsed ) ) {
           primitive = parsed;

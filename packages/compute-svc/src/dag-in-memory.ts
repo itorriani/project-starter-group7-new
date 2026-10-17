@@ -37,10 +37,22 @@ export class DAGComputeService implements ComputeService {
 
   computeCells(
     sheetId: string,
-    startingKeys: RCKey[]
+    startingKeys: RCKey[],
+    forcedValues?: Sparse<Value>
   ): Sparse<Value> {
     const dag = this.getGraph(sheetId);
     const cache = this.getCache(sheetId)
+
+    if( forcedValues ) {
+      this.updateCache(sheetId, forcedValues);
+      const nullFunctionEntries =
+        Object.keys(forcedValues)
+          .filter((key) => key in dag)
+          .map((key) => [key, ""]);
+      if (nullFunctionEntries.length) {
+        addToDAG(dag, Object.fromEntries(nullFunctionEntries));
+      }
+    }
 
     const lookup = (ref: AbsoluteReference) => {
       const value = this.sheetSvc.getCellValue(sheetId, ref);
@@ -48,10 +60,15 @@ export class DAGComputeService implements ComputeService {
       return value;
     }
 
+    const precomputed = Object.fromEntries(
+      startingKeys
+        .filter((key) => key in cache)
+        .map((key) => [key, cache[key]])
+    );
     const computed = calculate(dag, startingKeys, lookup, cache);
     this.updateCache(sheetId, computed);
 
-    return computed;
+    return {...precomputed, ...computed };
   }
 
   // Helper methods:

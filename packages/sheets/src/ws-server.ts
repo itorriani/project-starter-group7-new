@@ -11,6 +11,11 @@ function createServer(
   // ======== Assignment 6 ========
   // TODO: add a second parameter of type ComputeService
 
+  // ======== Assignment 7 =======
+  // TODO: replace the two parameters with the following:
+  //
+  // host: string, port: number
+
 ) {
 
   const subscribedRows: WeakMap<Connection, number> = new WeakMap();
@@ -57,6 +62,52 @@ function createServer(
           // TODO: uncomment
           // sendMessage<ServerMessage>(message, source, ...peers);
         }
+
+        // ======== Assignment 7 =========
+        //
+        // TODO: Replace the above implementation of this `case` as
+        //       described here. Instead of calling computeService directly,
+        //       make a PATCH request to the Compute Host (the host and port
+        //       parameters provided to `createServer` above). Follow the usual
+        //       process for making a fetch() call and processing the response
+        //       in a .then().
+        //
+        // const url = /* your code */;
+        // const method = "PATCH";
+        // const headers = /* your code */;
+        // const body = /* get this from msg[1] */;
+        //
+        // fetch(url, { method, headers, body})
+        //   .then(  /* check status and return res.json() */ )
+        //   .then((json: object) => {
+        //
+            //       The JSON of the response will either be a single object
+            //       such as
+            //
+            //          { "R0C0": "hello there", ... }
+            //
+            //       or an object which has `values` and `formulas`, like this:
+            //
+            //          {
+            //            "values": {"R0C0": "hello there", ...},
+            //            "formulas": {"R1C1": "@R0C0", ...}
+            //          }
+            //
+            //        TODO: Write an expression which determines which of the above
+            //        it is, and initialize the variable `values`:
+            //
+            //  const values: Sparse<SerializedValue> = ...;
+            //
+            //        TODO: respond to the client with an `UPDATE_VALUES` message
+            //        via the Websocket, as you did in Assignment 4.
+            //
+            //        TODO: if the response from the PATCH is of the second form
+            //        above, also send an `UPDATE_FORMULAS` message in the same
+            //        way you did for Assignment 6.
+            //
+            //        TODO: Don't forget to .catch() and console.log any error
+            //        that occurs
+        };
         break;
       }
       case "SUBSCRIBE_ROWS": {
