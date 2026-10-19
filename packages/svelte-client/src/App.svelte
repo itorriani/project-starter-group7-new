@@ -91,7 +91,7 @@
   //              should modify the referenced cell in `sheet.cells`.
   //              This callback function will take two arguments:
   //              an AbsoluteReference is the first, the second is
-  //              either a Value _or_ a string. For this part of 
+  //              either a Value _or_ a string. For this part of
   //              the project, you only need to deal with the case
   //              when the 2nd argument is a Value--the case when it's
   //              a string (representing a "formula") will be covered
@@ -102,7 +102,7 @@
   // TODO: You need to modify the 'onChange' callback function you defined
   //       just above this line, back during Assignment 4. Right now, this
   //       callback function takes an AbsoluteRef and a second argument that
-  //       can be either a Value or a string. You've already handled the 
+  //       can be either a Value or a string. You've already handled the
   //       Value case, which represents when the user is trying to change
   //       the value stored in a certain cell of the spreadsheet. Now add
   //       the code to handle the case where the second argument is a string,
@@ -272,7 +272,7 @@
     event: Event,
     sheetId: string,
     sheet: Sheet
-  ): Promise<SheetPatch> {
+  ): Promise<Sparse<Value>> {
     // ======== Assignment 3 ========
 
     // TODO: Find the `<input>` element which changed to trigger
