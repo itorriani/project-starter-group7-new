@@ -32,7 +32,7 @@ export class DAGComputeService implements ComputeService {
     values: Sparse<Value>
   ): Sparse<Value> {
     const updatedKeys = Object.keys(values) as RCKey[];
-    return this.computeCells(sheetId, updatedKeys);
+    return this.computeCells(sheetId, updatedKeys, values);
   }
 
   computeCells(
