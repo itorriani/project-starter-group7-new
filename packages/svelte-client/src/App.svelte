@@ -49,11 +49,32 @@
   // TODO: write an $effect() which calls wsSubscribeChanges.
   //       Use the relevant state variables above as arguments,
   //       so the effect is re-executed if any of them change.
-  //       You will need two callback functions: the first,
-  //       should set `wsConnection` above; the second should
-  //       modify the referenced cell in `sheet.cells`
+  //       You will need two callback functions:
+  //        (1) the first should set `wsConnection` above
+  //        (2) the second--let's call it 'onChange' to match what
+  //              itsin ws-client.ts,
+  //              should modify the referenced cell in `sheet.cells`.
+  //              This callback function will take two arguments:
+  //              an AbsoluteReference is the first, the second is
+  //              either a Value _or_ a string. For this part of
+  //              the project, you only need to deal with the case
+  //              when the 2nd argument is a Value--the case when it's
+  //              a string (representing a "formula") will be covered
+  //              in a later increment.
 
   // ======== Assignment 6 =========
+  //
+  // TODO: You need to modify the 'onChange' callback function you defined
+  //       just above this line, back during Assignment 4. Right now, this
+  //       callback function takes an AbsoluteRef and a second argument that
+  //       can be either a Value or a string. You've already handled the
+  //       Value case, which represents when the user is trying to change
+  //       the value stored in a certain cell of the spreadsheet. Now add
+  //       the code to handle the case where the second argument is a string,
+  //       representing a situation where the user is trying to edit the _formula_
+  //       being stored at a specific cell. This will involve modifying not the
+  //       the 'cells' array, but the 'formulas' sparse matrix (make sure your
+  //       code handles the case where 'formulas' is still set to 'undefined'!)
   //
   // TODO: define a $state variable to toggle the formulas
   //       on and off. The initial value should be false
@@ -187,7 +208,7 @@
     event: Event,
     sheetId: string,
     sheet: Sheet
-  ): Promise<SheetPatch> {
+  ): Promise<Sparse<Value>> {
 
     const input = event.target as HTMLInputElement;
     const url = `/api/sheets/${sheetId}/cells`;
@@ -214,7 +235,7 @@
       return res.json();
     }).then((json: unknown) => {
       sheet.cells[ref.row][ref.column] = value;
-      return json as SheetPatch;
+      return json as Sparse<Value>;
     }).catch((err) => {
       sheet.cells[ref.row][ref.column] = oldValue;
       input.value = String(oldValue);

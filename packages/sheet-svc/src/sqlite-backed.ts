@@ -10,12 +10,13 @@ import {
   parseKey
 } from "@poly-sheets/types";
 import { v4 as uuidv4 } from "uuid";
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
+import { DBTransaction  } from "./sqlite-transaction.ts";
 import { SheetService } from "./interface.ts"; ''
 
 const dbName = process.env.DB_NAME || "poly-sheets";
-const db = new Database(`${dbName}.db`);
-db.pragma('journal_mode = WAL');
+const db = new DatabaseSync(`${dbName}.db`);
+db.exec('PRAGMA journal_mode = WAL');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS sheets (
@@ -48,74 +49,49 @@ db.exec(`
   )
   `);
 
-const addSheet = db.prepare<
-  [string, string, number]
-  >(`
+const addSheet = db.prepare(`
   -- TODO: write an INSERT statement that takes
   --       (id, name, nrows) and inserts a row
   --       into the sheets table
   `);
 
-const addColumn = db.prepare<
-  [string, number, string]
-  >(`
+const addColumn = db.prepare(`
   -- TODO: write an INSERT statement that takes
   --       (sheet id, column #, column name) and
   --       adds a rows to the columns table
 `);
 
-const selectSheet = db.prepare<
-  [string],
-  { id: string; name: string; nrows: number }
-  >(`
+const selectSheet = db.prepare(`
   -- TODO: write a SELECT statement that gets a
   --       row from the sheets table, given an id
 `);
 
-const selectColumns = db.prepare<
-  [string],
-  { column: number, name: string }
-  >(`
+const selectColumns = db.prepare(`
   -- TODO: write a SELECT statement that gets all
   --       columns numbers and names from the
   --       columns table, given a sheet id.
   --       Return the rows ordered by column #.
 `)
 
-const countColumns = db.prepare<
-  [string], { ncolumns: number }
-  >(`
+const countColumns = db.prepare(`
   -- TODO: write a SELECT statement that gets a
   --       count of the number of columns in a sheet
 `);
 
-const selectOneValue = db.prepare<
-  [id: string, row: number, column: number],
-  { strval: string | null, numval: number | null }
-  >(`
+const selectOneValue = db.prepare(`
   -- TODO: write a SELECT statement that
   -- gets the strval and numval for the
   -- cell at row, number in the sheet
   `);
 
-const selectValues = db.prepare<
-  [id: string, start: number, end: number],
-  {
-    row: number, column: number,
-    strval: string | null,
-    numval: number | null
-  }
-  >(`
+const selectValues = db.prepare(`
   -- TODO: write a SELECT statement that gets all
   --       cell values for a sheet, starting with
   --       "start" row, and up to (not including)
   --       "end" row
   `);
 
-const updateValue = db.prepare<
-  [id: string, row: number, column: number,
-    strval: string | null, numval: number | null]
-  >(`
+const updateValue = db.prepare(`
   -- TODO: write a SQL statement which will insert a
   --       new value or replace an existing value
   --       at the given "row" and "column"
@@ -130,25 +106,28 @@ export class SQLiteSheetService implements SheetService {
     const id = uuidv4();
     const stored = { id, ...sheet };
 
-    const createSheet = db.transaction((sh: WithId<Sheet>) => {
-      // TODO: run the `addSheet` prepared statement to
-      //       add the sheet to the `sheets` table
+    const createSheet : DBTransaction = new DBTransaction(
+      db,
+      () => {
+        // TODO: run the `addSheet` prepared statement to
+        //       add the sheet to the `sheets` table
 
-      // TODO: for each column name, run the `addColumn`
-      //       prepared statement
+        // TODO: for each column name, run the `addColumn`
+        //       prepared statement
 
-      // TODO: for each cell (row x column), run the
-      //       `updateValue` prepared statement.
-      //
-      //       Do not store null values. Hint: use
-      //       Value.isEmpty() to check.
-      //
-      //       Use `Value.isNumber()` to determine whether
-      //       to set `numval` or `strval`. Only one should
-      //       be non-null.
-    });
+        // TODO: for each cell (row x column), run the
+        //       `updateValue` prepared statement.
+        //
+        //       Do not store null values. Hint: use
+        //       Value.isEmpty() to check.
+        //
+        //       Use `Value.isNumber()` to determine whether
+        //       to set `numval` or `strval`. Only one should
+        //       be non-null.
+      }
+    );
 
-    createSheet(stored);
+    createSheet.run();
 
     return stored;
   }
@@ -160,20 +139,27 @@ export class SQLiteSheetService implements SheetService {
     maxRows?: number
   ): Sheet | undefined {
     // TODO: use the `selectSheet` prepared stmt to
-    //       query for the sheet by id
+    //       query for the sheet by id. Consider using
+    //       'as' on the value returned by 'selectSheet'
+    //       in order to cast it to a type expression
+    //       encompassing either undefined OR a JS object
+    //       containing named/typed fields representing one
+    //       row of your 'sheets' SQL table.
     //
-    const sheet: Sheet | undefined =
-      undefined; // <- replace with your code
+    //       Consider what the type of 'sheet' will be. It will
+    //       will be either 'undefined' or <X>--will that <X> be 
+    //       a 'Sheet'?, Will <X> have every field that 'Sheet' does?
+    const sheet = undefined; // <- replace with your code
 
     if (!sheet) return undefined;
 
     // TODO: use the `selectColumns` prepared stmt
     //       to get all the column names for this sheet,
-    //       in order.
+    //       in order. Again, consider using 'as' on 
+    //       the value returned by 'selectColumns'.
     //
     const columns: { name: string }[] =
       []; // <- replace with your code
-
 
     const { rows } = this.getCellsInRange(id, 0, maxRows) || {};
 
@@ -192,10 +178,11 @@ export class SQLiteSheetService implements SheetService {
     maxRows?: number
   ): MoreRows | undefined {
     // TODO: use the `selectSheet` prepared stmt to
-    //       query for the sheet by id
+    //       query for the sheet by id. Again, think
+    //       about what 'sheet' will be (either undefined or some <X>
+    //       which may not be identical to 'Sheet').
     //
-    const sheet: Sheet | undefined =
-      undefined; // <- replace with your code
+    const sheet = undefined; // <- replace with your code
 
     if (!sheet) return undefined;
 

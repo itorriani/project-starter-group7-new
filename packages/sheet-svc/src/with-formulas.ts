@@ -57,7 +57,10 @@ export class FormulaSheetService implements SheetService {
     id: string,
     ref: AbsoluteReference
   ): Value | undefined {
-    return this.basicSvc.getCellValue(id, ref);
+    const result = this.basicSvc.getCellValue(id, ref);
+    if (result?.toString().startsWith("="))
+      return new PendingValue();
+    return result;
   }
 
   updateSheetValues(
@@ -105,6 +108,8 @@ function splitChanges(
       formulas[key as RCKey] = formula;
     } else {
       values[key as RCKey] = value;
+      // safe, but only necessary if cell was previously a formula
+      formulas[key as RCKey] = "";
     }
   });
 

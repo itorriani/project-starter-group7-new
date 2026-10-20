@@ -32,15 +32,27 @@ export class DAGComputeService implements ComputeService {
     values: Sparse<Value>
   ): Sparse<Value> {
     const updatedKeys = Object.keys(values) as RCKey[];
-    return this.computeCells(sheetId, updatedKeys);
+    return this.computeCells(sheetId, updatedKeys, values);
   }
 
   computeCells(
     sheetId: string,
-    startingKeys: RCKey[]
+    startingKeys: RCKey[],
+    forcedValues?: Sparse<Value>
   ): Sparse<Value> {
     const dag = this.getGraph(sheetId);
     const cache = this.getCache(sheetId)
+
+    if( forcedValues ) {
+      this.updateCache(sheetId, forcedValues);
+      const nullFunctionEntries =
+        Object.keys(forcedValues)
+          .filter((key) => key in dag)
+          .map((key) => [key, ""]);
+      if (nullFunctionEntries.length) {
+        addToDAG(dag, Object.fromEntries(nullFunctionEntries));
+      }
+    }
 
     const lookup = (ref: AbsoluteReference) => {
       const value = this.sheetSvc.getCellValue(sheetId, ref);
