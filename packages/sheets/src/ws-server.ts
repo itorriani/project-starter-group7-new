@@ -21,13 +21,7 @@ function createServer(
     switch (msg[0]) {
       case "PATCH_CELL_DATA": {
         const patch = fromSerializedValues(msg[1]);
-
-        // ======== Assignment 4 ========
-
-        // TODO: call the `updateSheetValues` function in `sheetSvc`
-        //       and save the result as `success`
-        //
-        const success = false; // <-- replace with your code
+        const success = svc.updateSheetValues(sheetId, patch);
 
         if (success) {
           // ======== Assignment 6 ========
@@ -46,16 +40,12 @@ function createServer(
           // TODO: If the patch included any formulas compose
           //       an `UPDATE_FORMULAS` message and send it.
 
-          // ======== Assignment 4 ========
+  
 
           const patch = toSerializedValues(success);
+          const message: ServerMessage = ["UPDATE_VALUES", patch];
 
-          // TODO: compose an `UPDATE_VALUES` message, using
-          //       `patch` as the payload object
-          //const message = []; // <- replace [] with your code
-
-          // TODO: uncomment
-          // sendMessage<ServerMessage>(message, source, ...peers);
+          sendMessage<ServerMessage>(message, source, ...peers);
         }
         break;
       }
