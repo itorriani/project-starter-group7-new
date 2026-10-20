@@ -45,10 +45,8 @@ export function wsSubscribeChanges(
   onConnect: (ws: Connection) => void,
   onChange: OnChangeHandler
 ) {
-  // TODO: compose a `SUBSCRIBE_ROWS` message to send
-  //       to the server:
-  //
-  // const message: ClientMessage = ...
+
+  const message: ClientMessage = ["SUBSCRIBE_ROWS", nrows];
 
   if (sheetId) {
     if (ws?.channel !== sheetId) {
@@ -56,15 +54,11 @@ export function wsSubscribeChanges(
         sheetId,
         (msg: ServerMessage) => wsHandleMessage(msg, onChange)
       ).then((conn) => {
-        // TODO: use the `sendMessage` function (imported above)
-        //       to send the `message` on the connection `conn
-
-        // TODO: invoke the callback function `onConnect`
-        //       so that the connection gets saved in App.svelte
+        sendMessage<ClientMessage>(conn, message);
+        onConnect(conn);
       });
     } else {
-      // TODO: use the `sendMessage` function (imported above)
-      //       to send the `message` on the connection `ws`
+        sendMessage<ClientMessage>(ws, message);
     }
   }
 }

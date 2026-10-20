@@ -44,23 +44,23 @@
 
   let wsConnection: Connection | undefined;
 
-  // ======== Assignment 4 ========
+  function onChange(ref: AbsoluteReference, val: Value | string) {
+    if (val instanceof Value) {
+      sheet.cells[ref.row][ref.column] = val;
+    }
+  }
+  $effect(() => {
+    wsSubscribeChanges(
+      sheetId,
+      rowsLoaded,
+      wsConnection,
+      (conn) => {
+        wsConnection = conn;
+      },
+      onChange
+    );
+  });
 
-  // TODO: write an $effect() which calls wsSubscribeChanges.
-  //       Use the relevant state variables above as arguments,
-  //       so the effect is re-executed if any of them change.
-  //       You will need two callback functions:
-  //        (1) the first should set `wsConnection` above
-  //        (2) the second--let's call it 'onChange' to match what
-  //              itsin ws-client.ts,
-  //              should modify the referenced cell in `sheet.cells`.
-  //              This callback function will take two arguments:
-  //              an AbsoluteReference is the first, the second is
-  //              either a Value _or_ a string. For this part of
-  //              the project, you only need to deal with the case
-  //              when the 2nd argument is a Value--the case when it's
-  //              a string (representing a "formula") will be covered
-  //              in a later increment.
 
   // ======== Assignment 6 =========
   //
