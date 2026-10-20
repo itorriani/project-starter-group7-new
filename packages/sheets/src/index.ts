@@ -14,11 +14,8 @@ import { InMemorySheetService } from "sheet-svc";
 
 import { readCSV } from "./csv.ts";
 import { viewSheet } from "./viewSheet.ts";
-
-// TODO: [Assignment 4] add these imports:
-//
-//   import websockets from "./websockets.ts"
-//   import wsServer from "./ws-server.ts";
+import websockets from "./websockets.ts"
+import wsServer from "./ws-server.ts";
   
 const port = process.env.PORT || 3000;
 const useSPA = !!process.env.STATIC;
@@ -118,17 +115,11 @@ app.get("/app/:id", (req: Request, res: Response) => {
 });
 
 // Start the server
-
-// TODO: [Assignment 4] Save the return value of `app.listen`
-//   in a variable called `server`. You will need this to
-//   set up websockets, below
-
-app.listen(port, () => {
+const server = app.listen(port, () => {
   const showServerLocMsg : string = 
   `Server listening at port ${port} at IPv4 0.0.0.0`;
   console.log( showServerLocMsg );  
 });
 
-// TODO: [Assignment 4] Enable websockets on the HTTP server
-//    by calling `websockets` with two inputs: (1) `server` (defined
-//    above) and (2) the result of calling `wsServer` on 'sheetService'.
+//enable websockets on HTTP server and pass the sheetService
+websockets(server, wsServer(sheetService)); 
