@@ -95,6 +95,9 @@ function wsHandleMessage(msg: ServerMessage, onChange: OnChangeHandler ) {
         // const ref: AbsoluteReference = ...
 
         // TODO: Use `onChange` to make the change to the sheet
+        const ref: AbsoluteReference = parseKey(key);
+        onChange(ref, Value.fromJSON(value))
+
       });
 
       break;
