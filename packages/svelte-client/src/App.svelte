@@ -111,7 +111,11 @@
         </tr>
       </thead>
       <tbody onchange={ (event: Event) => {
-        handleChange(event, sheetId, sheet)
+        if (wsConnection) {
+          wsHandleChange(event, wsConnection, onChange);
+        } else {
+          handleChange(event, sheetId, sheet);
+        }
         // TODO: [Assignment 4] if wsConnection is set, call `wshandleChange`
         //       instead of handleChange
 

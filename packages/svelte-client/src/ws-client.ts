@@ -26,8 +26,18 @@ export function wsHandleChange(
   // const ref = ...
   // const patch: Sparse<Value> = ...;
 
+
+    const input = event.target as HTMLInputElement;
+    const value = Value.fromUserInput(input.value);
+    const key = input.name as RCKey;
+    const ref: AbsoluteReference = parseKey(key);
+    const patch: Sparse<SerializedValue> = { [key]: value.toJSON() };
+
+
   // TODO: set the modified cell's value to a PendingValue,
   //       using the `onChange` callback.
+
+  onChange(ref, new PendingValue(value)) 
 
   // TODO: compose a `PATCH_CELL_DATA` message to send
   //       to the server:
@@ -35,6 +45,10 @@ export function wsHandleChange(
   // const message: ClientMessage = ...
 
   // TODO: send the message using sendMessage()
+
+  const message: ClientMessage = ["PATCH_CELL_DATA", patch];
+  sendMessage<ClientMessage>(connection, message);
+
 }
 
 
