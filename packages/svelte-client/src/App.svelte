@@ -112,8 +112,10 @@
       </thead>
       <tbody onchange={ (event: Event) => {
         if (wsConnection) {
+          console.log("using wsHandleChange, connection:", wsConnection);
           wsHandleChange(event, wsConnection, onChange);
         } else {
+          console.log("wsConnection not set, falling back to HTTP");
           handleChange(event, sheetId, sheet);
         }
         // TODO: [Assignment 4] if wsConnection is set, call `wshandleChange`

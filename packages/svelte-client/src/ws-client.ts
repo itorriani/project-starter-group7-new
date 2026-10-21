@@ -64,15 +64,23 @@ export function wsSubscribeChanges(
 
   if (sheetId) {
     if (ws?.channel !== sheetId) {
+      // Store onChange in a box so the receiver always calls the latest version,
+      // even after `sheet` is replaced by a new object in App.svelte
+      const onChangeRef = { current: onChange };
       createConnection<ServerMessage>(
         sheetId,
-        (msg: ServerMessage) => wsHandleMessage(msg, onChange)
+        (msg: ServerMessage) => wsHandleMessage(msg, onChangeRef.current)
       ).then((conn) => {
+        (conn as any)._onChangeRef = onChangeRef;
         sendMessage<ClientMessage>(conn, message);
         onConnect(conn);
       });
     } else {
-        sendMessage<ClientMessage>(ws, message);
+      // Update the stored onChange ref so future messages use the latest closure
+      if ((ws as any)._onChangeRef) {
+        (ws as any)._onChangeRef.current = onChange;
+      }
+      sendMessage<ClientMessage>(ws, message);
     }
   }
 }
@@ -80,9 +88,11 @@ export function wsSubscribeChanges(
 
 
 function wsHandleMessage(msg: ServerMessage, onChange: OnChangeHandler ) {
+  console.log("wsHandleMessage called:", msg);
   switch (msg[0]) {
     case "UPDATE_VALUES": {
       const patch = msg[1];
+      console.log("UPDATE_VALUES patch:", patch);
 
       // Record types are easier to handle
       // as an array of entries. So we start by getting
