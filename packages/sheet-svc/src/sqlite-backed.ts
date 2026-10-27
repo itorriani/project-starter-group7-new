@@ -58,11 +58,11 @@ db.exec(`
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS cells (
-    sheet_id TEXT NOT NULL
-    column_num INTEGER NOT NULL
-    row_num INTEGER NOT NULL
-    string_values TEXT 
-    number_values REAL
+    sheet_id TEXT NOT NULL,
+    column_num INTEGER NOT NULL,
+    row_num INTEGER NOT NULL,
+    string_values TEXT,
+    number_values REAL,
     PRIMARY KEY (sheet_id, row_num, column_num)
   )
   `);
@@ -78,12 +78,8 @@ db.exec(`
 */
 
 const addSheet = db.prepare(`
-    INSERT INTO sheets(
-    (id, name, nrows)
-    VALUES
-    (?, ?, ?)
-    )
-
+    INSERT INTO sheets (id, name, nrows)
+    VALUES (?, ?, ?)
   `);
   /*
   -- TODO: write an INSERT statement that takes
@@ -94,9 +90,8 @@ const addSheet = db.prepare(`
 
 
 const addColumn = db.prepare(`
-  INSERT INTO columns (id, column_num, column_name)
+  INSERT INTO columns (id, column_num, name)
   VALUES (? ? ?)
-
 `);
 /*
 
@@ -120,7 +115,7 @@ const selectColumns = db.prepare(`
     SELECT column_num, name
     FROM columns
     WHERE sheet_id = ?
-    ORDERED BY column_num
+    ORDER BY column_num
 `)
 /*
   -- TODO: write a SELECT statement that gets all
