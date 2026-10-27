@@ -19,26 +19,55 @@ const db = new DatabaseSync(`${dbName}.db`);
 db.exec('PRAGMA journal_mode = WAL');
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS sheets (
-    -- TODO: write the schema for holding basic
+    CREATE TABLE if NOT EXISTS sheets (
+      id TEXT PRIMARY KEY, 
+      name TEXT NOT NULL, 
+      nrows INTERGER NOT NULL
+  )
+  `
+
+     /* -- TODO: write the schema for holding basic
     --       information about each sheet:
     --
     -- id, a UUID, the primary key
     -- name and nrows as from the TS interface Sheet
+    */
+
+
+)
+
+
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS columns (
+    sheet_id TEXT NOT NULL
+    column_num INTEGER NOT NULL
+    name TEXT NOT NULL
+    PRIMARY KEY (sheet_id, column_num)
   )
   `);
 
-db.exec(`
+/*
   CREATE TABLE IF NOT EXISTS columns (
     -- TODO: write the schema for holding all column
     --       names for all sheets. Index the names
     --       by (sheet id, column #), which must
     --       be unique
   )
-  `);
+*/
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS cells (
+    sheet_id TEXT NOT NULL
+    column_num INTEGER NOT NULL
+    row_num INTEGER NOT NULL
+    string_values TEXT 
+    number_values REAL
+    PRIMARY KEY (sheet_id, column_num)
+  )
+  `);
+
+  /*
     -- TODO: write the schema for holding all cell
     --       data in all sheets. Index the cells by
     --       (sheet id, row #, column #) which must.
@@ -46,58 +75,113 @@ db.exec(`
     --       Store string values and numeric values
     --       in separate columns to avoid conversion
     --       issues.
-  )
-  `);
+*/
 
 const addSheet = db.prepare(`
+    INSERT INTO sheets(
+    (id, name, nrows)
+    VALUES
+    (?, ?, ?)
+    )
+
+  `);
+  /*
   -- TODO: write an INSERT statement that takes
   --       (id, name, nrows) and inserts a row
   --       into the sheets table
-  `);
+  */
+
+
 
 const addColumn = db.prepare(`
+  INSERT INTO columns (id, column_num, column_name)
+  VALUES (? ? ?)
+
+`);
+/*
+
   -- TODO: write an INSERT statement that takes
   --       (sheet id, column #, column name) and
   --       adds a rows to the columns table
-`);
+
+*/
 
 const selectSheet = db.prepare(`
+  SELECT id, name, nrows  
+  FROM sheets
+  WHERE id=?
+`);
+/*
   -- TODO: write a SELECT statement that gets a
   --       row from the sheets table, given an id
-`);
+*/
 
 const selectColumns = db.prepare(`
+    SELECT column_num, name
+    FROM columns
+    WHERE sheet_id = ?
+    ORDERED BY column_name
+`)
+/*
   -- TODO: write a SELECT statement that gets all
   --       columns numbers and names from the
   --       columns table, given a sheet id.
   --       Return the rows ordered by column #.
-`)
-
+*/
 const countColumns = db.prepare(`
-  -- TODO: write a SELECT statement that gets a
-  --       count of the number of columns in a sheet
+  SELECT COUNT(*) AS ncolumns
+  FROM columns
+  WHERE sheet_id = ?
+
 `);
 
+  /*-- TODO: write a SELECT statement that gets a
+  --       count of the number of columns in a sheet
+  */
+
 const selectOneValue = db.prepare(`
+  SELECT string_values AS strval, num_values AS numval
+  FROM cells
+  WHERE sheet_id = ? AND column_num = ? AND row_num = ?
+
+  `);
+
+  /*
   -- TODO: write a SELECT statement that
   -- gets the strval and numval for the
   -- cell at row, number in the sheet
-  `);
+  */
 
 const selectValues = db.prepare(`
+  SELECT row_num AS row, column_num AS column, string_values AS strval, number_values AS numval
+  FROM cells
+  WHERE sheet_id = ? AND row_num >= ? and row_num < ?
+
+  `);
+
+/*
   -- TODO: write a SELECT statement that gets all
   --       cell values for a sheet, starting with
   --       "start" row, and up to (not including)
   --       "end" row
-  `);
-
+*/
 const updateValue = db.prepare(`
+  INSERT OR REPLACE INTO cells (
+    sheet_id,
+    row_num,
+    column_num,
+    string_values,
+    number_values
+  )
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+/*
   -- TODO: write a SQL statement which will insert a
   --       new value or replace an existing value
   --       at the given "row" and "column"
   --       in a sheet's cell values
-  `);
-
+*/
 
 export class SQLiteSheetService implements SheetService {
 
