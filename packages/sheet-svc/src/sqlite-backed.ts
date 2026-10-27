@@ -22,7 +22,7 @@ db.exec(`
     CREATE TABLE if NOT EXISTS sheets (
       id TEXT PRIMARY KEY, 
       name TEXT NOT NULL, 
-      nrows INTERGER NOT NULL
+      nrows INTEGER NOT NULL
   )
   `
 
@@ -40,9 +40,9 @@ db.exec(`
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS columns (
-    sheet_id TEXT NOT NULL
-    column_num INTEGER NOT NULL
-    name TEXT NOT NULL
+    sheet_id TEXT NOT NULL,
+    column_num INTEGER NOT NULL,
+    name TEXT NOT NULL,
     PRIMARY KEY (sheet_id, column_num)
   )
   `);
@@ -63,7 +63,7 @@ db.exec(`
     row_num INTEGER NOT NULL
     string_values TEXT 
     number_values REAL
-    PRIMARY KEY (sheet_id, column_num)
+    PRIMARY KEY (sheet_id, row_num, column_num)
   )
   `);
 
@@ -120,7 +120,7 @@ const selectColumns = db.prepare(`
     SELECT column_num, name
     FROM columns
     WHERE sheet_id = ?
-    ORDERED BY column_name
+    ORDERED BY column_num
 `)
 /*
   -- TODO: write a SELECT statement that gets all
@@ -140,9 +140,9 @@ const countColumns = db.prepare(`
   */
 
 const selectOneValue = db.prepare(`
-  SELECT string_values AS strval, num_values AS numval
+  SELECT string_values AS strval, number_values AS numval
   FROM cells
-  WHERE sheet_id = ? AND column_num = ? AND row_num = ?
+  WHERE sheet_id = ? AND row_num = ? AND column_num = ? 
 
   `);
 
