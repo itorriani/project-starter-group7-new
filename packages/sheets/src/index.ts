@@ -3,9 +3,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { Sheet, WithId, newSheet } from "@poly-sheets/types";
 import newRouter from "./api.ts"
-// TODO: [Assignment 5] replace the following with
-//       SQLiteSheetService
-import { InMemorySheetService } from "sheet-svc";
+import { SQLiteSheetService } from "sheet-svc";
 // TODO: [Assignment 6] Add `FormulaSheetService` to the
 //       above import from `sheet-svc`
 
@@ -24,9 +22,7 @@ const staticDir = path.resolve(process.env.STATIC || "public");
 const templateDir = path.resolve(process.env.TEMPLATES || "public/templates");
 
 const app = express();
-// TODO: [Assignment 5] replace the following with
-//       SQLiteSheetService
-const sheetService = new InMemorySheetService();
+const sheetService = new SQLiteSheetService();
 
 // TODO: [Assignment 6] redefine `sheetService` above
 //       by using `new FormulaSheetService`. This class
