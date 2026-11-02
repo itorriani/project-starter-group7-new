@@ -98,7 +98,8 @@ function createServer(
             //
             //  const values: Sparse<SerializedValue> = ...;
             //
-            //        TODO: respond to the client with an `UPDATE_VALUES` message
+            //        TODO: Update the client (and any other clients observing the
+            //        same spreadsheet) by sending an `UPDATE_VALUES` message
             //        via the Websocket, as you did in Assignment 4.
             //
             //        TODO: if the response from the PATCH is of the second form

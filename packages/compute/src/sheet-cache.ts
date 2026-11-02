@@ -200,8 +200,10 @@ export class SheetCache extends InMemorySheetService {
           });
 
         // A Sparse<Value> with all cells that have formulas:
-        const pendingValues: Sparse<Value> = Object.keys(formulas)
-          .map((key) => [key, new PendingValue()]);
+        const pendingValues: Sparse<Value> = Object.fromEntries( Object.keys(formulas)
+          .map((key) => [key, new PendingValue()]) );
+
+        // A Sparse<Value> with all cells that have f
 
         // TODO: Update the cached sheet with the values for cells
         //       that are now pending calculation.

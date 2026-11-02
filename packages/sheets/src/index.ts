@@ -12,8 +12,8 @@ import { InMemorySheetService } from "sheet-svc";
 //       `compute-svc`
 
 // TODO [Assignment 7] remove (or comment out)
-//      the three services imports above
-//      (they were added in Assignments 5 & 6)
+//      the services imports above
+//      (the ones added in Assignments 5 & 6)
 
 import { readCSV } from "./csv.ts";
 
@@ -140,7 +140,10 @@ app.post("/app", (req: Request, res: Response) => {
 
   function redirectToSheet(sheet: WithId<Sheet>) {
 
-    // TODO: [Assignment 7] Before you can redirect, you need
+    // TODO: [Assignment 7]
+    //       Change this function so it takes a 'Sheet', not a 'WithID<Sheet>'.
+    // 
+    //       Before you can redirect, you need
     //       to use the REST API on the Compute Host and have
     //       it create the Sheet. Use `fetch()` to make a POST request
     //       to `/api/sheets` on the Compute Host. Send the
