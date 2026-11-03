@@ -1,19 +1,11 @@
 import express, { Request, Response, Router } from "express";
 import { SheetService }  from "sheet-svc";
 import { RCKey, SerializedValue, Sparse, Value, parseKey } from "@poly-sheets/types";
-// TODO: [Assignment 6] add this import:
-//
-// import { ComputeService } from "compute-svc";
+import { ComputeService } from "compute-svc";
 
 function createRouter(
-  svc: SheetService
-
-  // TODO: [Assignment 6] add a second parameter to createRouter(),
-  //       of type ComputeService
-) : Router {
-
-
-  const router = Router();
+  svc: SheetService, computeSvc: ComputeService) : Router {
+    const router = Router();
 
     router.use(express.json({ type: ['application/*+json', 'application/json'] }));
 
@@ -30,73 +22,36 @@ function createRouter(
       //make a new call to getsheet with the limit
       const sheet = svc.getSheetById(id, limit);
 
-      //const sheet = svc.getSheetById(id);
-
-
-      if(sheet){
-        return res.send(sheet);
-      }
-      else{
+      if(!sheet){
         return res.status(404).send({ error: `Sheet ${id} not found.`});
       }
 
 
-    // ======== Assignment 6 ========
+      if (sheet.formulas && Object.keys(sheet.formulas).length > 0) {
+          const computedValues = computeSvc.updateFormulas(id, sheet.formulas);
+          updateCells(sheet.cells, computedValues);
+      }
 
-    // TODO: before sending the sheet back to the client,
-    //       check if there is anything in `sheet.formulas`.
-    //       If so, call the `updateFormulas` method on
-    //       the ComputeService. This will return a `Sparse<Value>`
-    //       with any values which the compute service computed.
-    //       Use the `updateCells()` helper function (defined at
-    //       the bottom of this file) to update `sheet.cells`.
-    //       Then the sheet can be sent back to the client
+      return res.send(sheet);
     });
 
     router.get("/sheets/:id/cells", (req: Request, res: Response) => {
-      // ======== Assignment 3 ========
-
-      // TODO: Get the `id` as well as the `limit` and `start`
-      //       query parameters from the Request object
-      //
-      // const id = ...
-      // const { limit, start } = ...
-
-      // TODO: Define `moreRows` as the result of calling
-      //       the `getCellsInRange` sheet service function with
-      //       the values of `id`, `start`, and `limit`.
-      //       Hint: use parseInt to convert strings to numbers
-      //
-      // const moreRows = ...
-
-      // TODO: If there was an error (`moreRows` is undefined)
-      //       send an error response. Otherwise, send the
-      //       `moreRows` object as JSON in the body of the reponse
-
-    // ======== Assignment 6 ========
-
-    // TODO: As you did above for `sheets/:id`, check for any
-    //       `formulas` in the data from the sheet service. If
-    //       there are any, use `updateFormulas` in the
-    //       ComputeService to calculate the formulas, and then
-    //       `updateCells()` to update moreRows.rows before
-    //       sending it back to the client
 
     const id = req.params.id as string;
-
     const start = req.query.start ? parseInt(req.query.start as string) : 0;
-
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-
     const moreRows = svc.getCellsInRange(id, start, limit);
 
     if (!moreRows) {
       return res.status(404).send({ error: `Sheet ${id} not found.` });
     }
 
+    if (moreRows.formulas && Object.keys(moreRows.formulas).length > 0) {
+      const computedValues = computeSvc.updateFormulas(id, moreRows.formulas);
+      updateCells(moreRows.rows, computedValues, start);
+    }
+
     return res.send(moreRows);
-
-
     });
 
     router.patch("/sheets/:id/cells", (req: Request, res: Response) => {
@@ -111,51 +66,21 @@ function createRouter(
         return res.status(404).send({ error: `Sheet ${id} not found.` });
       }
 
-      return res.send(result);
+      let values = "values" in result ? result.values : result;
+      const dependentValues = computeSvc.updateValues(id, values);
+      Object.assign(values, dependentValues);
+
+      let formulas = "formulas" in result ? result.formulas : undefined;
+      
+      if (formulas) {
+        const recalc = computeSvc.updateFormulas(id, formulas)
+        Object.assign(values, recalc);
+        res.send({ formulas, values });
+      } else {
+        res.send(values);
+      }
     });
-        // ======== Assignment 6 ========
-
-    // If the updateSheetValues finds any formulas in the patch,
-    // it separates the formulas from the values and returns an
-    // object of type:
-    //
-    //    { values: Sparse<Value>, formulas: Sparse<string> }
-    //
-    // When this happens, you will still send the entire result
-    // to the client, but you will need to call different methods
-    // of ComputeService first, with the separate values and formulas
-
-    // TODO: Check `result` and get just the `values`, not the
-    //       formulas. (We will handle the formulas later.)
-    //
-    // let values = "values" in result ? result.values : result;
-
-    // TODO: Before sending the results back to the client, you
-    //       need to have ComputeService recompute any formulas
-    //       which depend on these changed values. The `updateValues`
-    //       method in ComputeService does all the dependency
-    //       checking, but you need to pass it the set of values
-    //       from the patch. `updateValues` returns all
-    //       values of formulas that were recalculated. Merge
-    //       the recalculated values into `values`.
-
-    // TODO: Now check for formulas, and if there are any,
-    //       call `updateFormulas` as you did in the GET
-    //       endpoints above. This will return still more
-    //       updated values, which you will also need to merge
-    //       into values.
-    //
-    // let formulas = "formulas" in result ? result.formulas : undefined;
-    //
-    // if ( formulas ) {
-    //    const { formulas } = results;
-    //    /* call `updateFormulas` and merge the resulting
-    //       values into `values`
-    //    */
-    //    res.send({ formulas, values });
-    // } else {
-    //    res.send(values);
-    // }
+   
 
   return router;
 }
