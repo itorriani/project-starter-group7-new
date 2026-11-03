@@ -3,13 +3,8 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { Sheet, WithId, newSheet } from "@poly-sheets/types";
 import newRouter from "./api.ts"
-import { SQLiteSheetService } from "sheet-svc";
-// TODO: [Assignment 6] Add `FormulaSheetService` to the
-//       above import from `sheet-svc`
-
-// TODO [Assignment 6] import `DAGComputeService` from
-//       `compute-svc`
-
+import { SQLiteSheetService, FormulaSheetService} from "sheet-svc";
+import { DAGComputeService } from "compute-svc";
 import { readCSV } from "./csv.ts";
 import { viewSheet } from "./viewSheet.ts";
 import websockets from "./websockets.ts"
@@ -22,18 +17,9 @@ const staticDir = path.resolve(process.env.STATIC || "public");
 const templateDir = path.resolve(process.env.TEMPLATES || "public/templates");
 
 const app = express();
-const sheetService = new SQLiteSheetService();
-
-// TODO: [Assignment 6] redefine `sheetService` above
-//       by using `new FormulaSheetService`. This class
-//       requires that you pass the SQLiteSheetService
-//       to its constructor.
-
-// TODO: [Assignment 6] define `computeService` by using
-//       `new DAGComputeService`, and passing it
-//       the `sheetService` (above) to the constructor
-//
-// const computeService = ...
+const sqliteSheetService = new SQLiteSheetService();
+const sheetService = new FormulaSheetService(sqliteSheetService);
+const computeService = new DAGComputeService(sheetService);
 
 app.use(express.static(
   staticDir,
@@ -41,16 +27,8 @@ app.use(express.static(
 ));
 app.use(express.urlencoded()); // for parsing application/x-www-form-urlencoded
 
-// TODO: [Assignment 2] create a router by calling createRouter.
-//
 
-const router = newRouter(sheetService);
-
-// TODO: [Assignment 2] Have `app` use `router` to handle
-//       all requests which begin with `/api`. Note that 
-//       this cause the later "app.get("/app/:id..." call
-//       from Assignment 1 to have no effect.
-//
+const router = newRouter(sheetService, computeService);
 app.use( "/api", router);
 
 if (useSPA) {
@@ -86,10 +64,6 @@ app.post("/app", (req: Request, res: Response) => {
         redirectToSheet(stored);
       })
       .catch((err: Error) => {
-        // TODO: [Assignment 1] an error occurred. Respond
-        //       with an HTTP error status. You may assume
-        //       the only possible error is that the file
-        //       was not found.
         res.status(404).send(`Error: file not found`);
       });
   }
@@ -118,4 +92,4 @@ const server = app.listen(port, () => {
 });
 
 //enable websockets on HTTP server and pass the sheetService
-websockets(server, wsServer(sheetService)); 
+websockets(server, wsServer(sheetService, computeService)); 
