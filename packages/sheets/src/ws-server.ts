@@ -1,17 +1,9 @@
 import { ClientMessage, SerializedValue, ServerMessage, Sparse, Value } from "@poly-sheets/types";
 import { Connection, sendMessage } from "./websockets.ts";
 import { SheetService } from "sheet-svc";
-// TODO: [Assignment 6] Add this import:
-//
-// import { ComputeService } from "compute-svc";
+import { ComputeService } from "compute-svc";
 
-function createServer(
-  svc: SheetService
-
-  // ======== Assignment 6 ========
-  // TODO: add a second parameter of type ComputeService
-
-) {
+function createServer(svc: SheetService, computeSvc: ComputeService) {
 
   const subscribedRows: WeakMap<Connection, number> = new WeakMap();
 
@@ -24,26 +16,24 @@ function createServer(
         const success = svc.updateSheetValues(sheetId, patch);
 
         if (success) {
-          // ======== Assignment 6 ========
+          const values = "values" in success ? success.values : success;
 
-          // TODO: Apply the same changes you made to the PATCH
-          //       endpoint in api.ts here. That is:
-          //
-          //    1. Check whether `success` is an object with `values`
-          //       and `formulas`.
-          //    2. Call the ComputeService's `updateValues`
-          //       with the values
-          //    3. Call the ComupteService's `updateFormulas`
-          //       with the formulas
-          //    4. Merge all the changed values into one Sparse<Value>
+          const changedVal = computeSvc.updateValues(sheetId, values);
+          Object.assign(values, changedVal);
 
-          // TODO: If the patch included any formulas compose
-          //       an `UPDATE_FORMULAS` message and send it.
+          const formulas = "formulas" in success ? success.formulas : undefined;
+          if (formulas) {
+            const changedForm = computeSvc.updateFormulas(sheetId, formulas);
+            Object.assign(values, changedForm);
+
+            const formulaMessage: ServerMessage = ["UPDATE_FORMULAS", formulas];
+            sendMessage<ServerMessage>(formulaMessage, source, ...peers);
+          }
 
   
 
-          const patch = toSerializedValues(success);
-          const message: ServerMessage = ["UPDATE_VALUES", patch];
+          const serial = toSerializedValues(values);
+          const message: ServerMessage = ["UPDATE_VALUES", serial];
 
           sendMessage<ServerMessage>(message, source, ...peers);
         }
