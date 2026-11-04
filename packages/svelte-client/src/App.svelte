@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { newSheet, sparseKeyOf, Value } from "@poly-sheets/types";
+  import { newSheet, sparseKeyOf, Value, type Sparse } from "@poly-sheets/types";
   import { wsHandleChange, wsSubscribeChanges } from "./ws-client.ts";
   import { type Connection } from "./websocket.ts";
   import Cell from "./Cell.svelte";
@@ -30,11 +30,11 @@
         return res.json();
       })
       .then((json: unknown) => {
-        const { cells, nrows, columns, name } = json as { cells: SerializedValue[][], nrows: number, columns: string[], name: string };
+        const { cells, nrows, columns, name, formulas } = json as { cells: SerializedValue[][], nrows: number, columns: string[], name: string, formulas: Sparse<string> };
 
         const cellValues = convertCellValues(cells);
 
-          sheet = { ...sheet, name, columns, nrows, cells: cellValues };
+          sheet = { ...sheet, name, columns, nrows, cells: cellValues, formulas };
 
       })
       .catch((err: Error) => {
@@ -47,6 +47,17 @@
   function onChange(ref: AbsoluteReference, val: Value | string) {
     if (val instanceof Value) {
       sheet.cells[ref.row][ref.column] = val;
+    } else {
+
+      // if no formula sheet exists, create an empty one. 
+       if (!sheet.formulas) { sheet.formulas = {}; }
+
+       // stores in a table the cell row/col with the associated function
+       // represented as a string. >
+       sheet.formulas[sparseKeyOf(ref)] = val; 
+
+
+
     }
   }
   $effect(() => {
@@ -79,13 +90,22 @@
   // TODO: define a $state variable to toggle the formulas
   //       on and off. The initial value should be false
   //
-  // let showFormulas = ...
+  
+  
+  let showFormulas = $state(false)
+
+
 
 </script>
 
 <main>
   <header>
     <h1>Poly-Sheets</h1>
+    <label>
+      <input type="checkbox" bind:checked={showFormulas} />
+      <span> Show Formulas </span>
+    </label> 
+
     <!--
       TODO: [ Assignment 6 ] Add a labeled checkbox bound to the value of
             `showFormulas`. Write an event handler so that
@@ -110,7 +130,7 @@
           {/each}
         </tr>
       </thead>
-      <tbody onchange={ (event: Event) => {
+      <tbody class={showFormulas ? "show-formulas" : "hide-formulas"} onchange={ (event: Event) => {
         if (wsConnection) {
           console.log("using wsHandleChange, connection:", wsConnection);
           wsHandleChange(event, wsConnection, onChange);
@@ -130,7 +150,13 @@
         <tr>
           <th>{r}</th>
           {#each row as value, c}
-            <Cell row={r} column={c} {value} />
+            <Cell row={r} column={c} {value} 
+            
+            formula={ sheet.formulas
+                    ? sheet.formulas[sparseKeyOf({row: r, column: c})]
+                    : "" }
+             />
+
           {/each}
         </tr>
         {/each}
@@ -155,7 +181,7 @@
       {#if rowsLoaded < totalRows}
         {rowsLoaded}/{totalRows} rows loaded
         <!-- button for more rows -->
-        <button onclick={() => loadMoreRows(sheetId, sheet, ROW_CHUNK_SIZE)}>Load More Rows</button>
+        <button onclick={() => loadMoreRows(sheetId, sheet, ROW_CHUNK_SIZE)}> Load More Rows </button>
       {:else}
         {totalRows} rows
       {/if}
@@ -202,11 +228,17 @@
         return res.json();
       })
       .then((json: unknown) => {
-        const moreRows = json as { count: number, rows: SerializedValue[][] };
+        const moreRows = json as { count: number, rows: SerializedValue[][], formulas: Sparse<string> };
         const newRows = convertCellValues(moreRows.rows);
         for (const row of newRows) {
           sheet.cells.push(row);
         }
+
+        if (moreRows.formulas) {
+          if (!sheet.formulas) { sheet.formulas = {}; }
+          Object.assign(sheet.formulas, moreRows.formulas);
+}
+
       });
   }
 

@@ -113,11 +113,12 @@ function wsHandleMessage(msg: ServerMessage, onChange: OnChangeHandler ) {
       break;
     }
     case "UPDATE_FORMULAS": {
-      // ======== Assignment 6 ========
-      //
-      // TODO: For each key in patch, call onChange with
-      //       a reference and the formula.
-
+      const patch = msg[1];
+      const entries = Object.entries(patch) as [RCKey, string][];
+      entries.forEach(([key, formula]) => {
+        const ref: AbsoluteReference = parseKey(key);
+        onChange(ref, formula);
+      });
       break;
     }
     default:
