@@ -1,7 +1,6 @@
 import express, { Request, Response, Router } from "express";
 import { SheetService }  from "sheet-svc";
 import { RCKey, SerializedValue, Sheet, Sparse, Value } from "@poly-sheets/types";
-
 // ======== Assignment 7 ========
 //
 // Complete the implementation of `createRouter`, which
@@ -12,66 +11,68 @@ import { RCKey, SerializedValue, Sheet, Sparse, Value } from "@poly-sheets/types
 // Assignment 6. You can find that version of your
 // code in git and copy it here.
 function createRouter(svc: SheetService) {
-
   const router = Router();
-
   router.use(express.json({ limit: "1Mb" }));
 
   router.post("/sheets", (req: Request, res: Response) => {
-    // TODO: Complete this route to add a Sheet to the
-    //   SheetService. Follow REST conventions for creating
-    //   a resource using POST. You will have to convert
-    //   `sheet.cells` in the Request from SerializedValue[][]
-    //    to Value[][]. (See helper function at the bottom
-    //    of this file.)
-    //
-    // We did not need this route in `sheets`, but you
-    // did something similar to handle the POST request
-    // for `/app` in `sheets/src/index.ts`.
-
-    const json = req.body as object;
-    const { cells } = json as { cells: SerializedValue[][] };
+    const json = req.body as {
+      name: string;
+      columns: string[];
+      nrows: number;
+      cells: SerializedValue[][];
+      formulas?: Sparse<string>;
+    };
     const sheet: Sheet = {
-      // compose a new sheet object, with the properties
-      // from `json`, but the cells converted to Value[][]
-    }
-
-    // Use the SheetService to store the new sheet.
-    const stored = {}; // <- replace with your code
-
-    // Send back response with the correct status and the
-    // stored sheet in the body
+      name: json.name,
+      columns: json.columns,
+      nrows: json.nrows,
+      cells: convertCellValues(json.cells),
+      formulas: json.formulas,
+    };
+    const stored = svc.addSheet(sheet);
+    res.status(201).send(stored);
   });
 
   router.get("/sheets/:id", (req: Request, res: Response) => {
-    // TODO: complete this route.
-    //
-    // Use git to find the version of `sheets/src/api.ts`
-    // where you implemented this route with just a
-    // SheetService (no ComputeService).
+    const id = req.params.id;
+    if (typeof id !== "string") {
+      return res.status(400).json({ error: "Invalid sheet ID format." });
+    }
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const sheet = svc.getSheetById(id, limit);
+    if (!sheet) {
+      return res.status(404).send({ error: `Sheet ${id} not found.` });
+    }
+    return res.send(sheet);
   });
 
   router.get("/sheets/:id/cells", (req: Request, res: Response) => {
-    // TODO: complete this route.
-    //
-    // Use git to find the version of `sheets/src/api.ts`
-    // where you implemented this route with just a
-    // SheetService (no ComputeService).
+    const id = req.params.id as string;
+    const start = req.query.start ? parseInt(req.query.start as string) : 0;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const moreRows = svc.getCellsInRange(id, start, limit);
+    if (!moreRows) {
+      return res.status(404).send({ error: `Sheet ${id} not found.` });
+    }
+    return res.send(moreRows);
   });
 
   router.patch("/sheets/:id/cells", (req: Request, res: Response) => {
-    // TODO: complete this route.
-    //
-    // Use git to find the version of `sheets/src/api.ts`
-    // where you implemented this route with just a
-    // SheetService (no ComputeService).
+    const id = req.params.id as string;
+    const patch = Object.fromEntries(
+      Object.entries(req.body).map(([key, value]) =>
+        [key, Value.fromJSON(value as SerializedValue)])
+    ) as Sparse<Value>;
+    const result = svc.updateSheetValues(id, patch);
+    if (!result) {
+      return res.status(404).send({ error: `Sheet ${id} not found.` });
+    }
+    return res.send(result);
   });
 
   return router;
 }
-
 // helper function
-
 function convertCellValues(
   cells: SerializedValue[][]
 ): Value[][] {
@@ -80,5 +81,4 @@ function convertCellValues(
       (v) => Value.fromJSON(v)
     ));
 }
-
 export default createRouter;
