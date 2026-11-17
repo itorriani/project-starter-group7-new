@@ -65,7 +65,6 @@ export class DAGComputeService implements ComputeService {
         .filter((key) => key in cache)
         .map((key) => [key, cache[key]])
     );
-
     const computed = calculate(dag, startingKeys, lookup, cache);
     this.updateCache(sheetId, computed);
 

@@ -1,0 +1,30 @@
+{
+  "name": "storage",
+  "version": "1.0.0",
+  "description": "web server for poly-sheets",
+  "keywords": [
+    "web",
+    "express",
+    "spreadsheet"
+  ],
+  "license": "BSD-3-Clause",
+  "author": "kubiak@calpoly.edu",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "rm -rf dist && npx tsc -b && echo Done",
+    "start": "node -r source-map-support/register dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@poly-sheets/types": "^1.0.0",
+    "express": "^5.2.1",
+    "sheet-svc": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6"
+  }
+}

@@ -12,9 +12,23 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start:standalone": "npm run -w sheets build && npm run -w sheets start",
-    "start:sheets": "npm run -w sheets build && npm run -w sheets start:web",
-    "test": "echo \"Error: no test specified\" && exit 1"
+		"build:types": "npm run -w @poly-sheets/types build",
+		"build:sheet-svc": "npm run -w sheet-svc build",
+		"build:formula": "npm run -w @poly-sheets/formula build",
+		"build:compute-svc": "npm run -w compute-svc build",
+		"build:sheets": "npm run -w sheets build",
+		"build:svelte-client": "npm run -w svelte-client build",
+		"build:mqueue": "npm run -w compute-svc build",
+		"build:storage": "npm run -w storage build",
+		"build:compute": "npm run -w compute build",
+		"start:standalone": "npm run build:sheets && npm run -w sheets start",
+		"start:sheets": "npm run build:sheets && npm run -w sheets start:web",
+		"start:mqueue": "npm run build:mqueue && npm run -w mqueue start",
+		"start:storage": "npm run build:storage && npm run -w storage start",
+		"start:compute": "npm run build:compute && npm run -w compute start",
+		"start:compute-2": "npm run build:compute && npm run -w compute start-2",
+		"realclean": "rm -rf node_modules package-lock.json packages/*/dist",
+		"test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
