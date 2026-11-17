@@ -4,7 +4,8 @@ import fs from "node:fs/promises";
 import { Sheet, WithId, newSheet } from "@poly-sheets/types";
 import apiProxy from "./proxy.ts"
 import { readCSV } from "./csv.ts";
-
+import websockets from "./websockets.ts";
+import wsServer from "./ws-server.ts";
 
   
 const port = process.env.PORT || 3000;
@@ -98,5 +99,5 @@ const server = app.listen(port, () => {
   `Server listening at port ${port} at IPv4 0.0.0.0`;
   console.log( showServerLocMsg );  
 });
-websockets(server, wsServer(sheetService, computeService));
+websockets(server, wsServer(computeHost, parseInt(computePort)));
 
