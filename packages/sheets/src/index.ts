@@ -2,13 +2,10 @@ import express, { Request, Response } from "express";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { Sheet, WithId, newSheet } from "@poly-sheets/types";
-import newRouter from "./api.ts"
-import { SQLiteSheetService, FormulaSheetService} from "sheet-svc";
-import { DAGComputeService } from "compute-svc";
+import apiProxy from "./proxy.ts"
 import { readCSV } from "./csv.ts";
-import { viewSheet } from "./viewSheet.ts";
-import websockets from "./websockets.ts"
-import wsServer from "./ws-server.ts";
+
+
   
 const port = process.env.PORT || 3000;
 
@@ -22,9 +19,7 @@ const staticDir = path.resolve(process.env.STATIC || "public");
 const templateDir = path.resolve(process.env.TEMPLATES || "public/templates");
 
 const app = express();
-const sqliteSheetService = new SQLiteSheetService();
-const sheetService = new FormulaSheetService(sqliteSheetService);
-const computeService = new DAGComputeService(sheetService);
+
 
 // TODO: [Assignment 7] remove or comment out the above
 //       definitions for sheetService and computeService
@@ -35,14 +30,8 @@ app.use(express.static(
 ));
 app.use(express.urlencoded()); // for parsing application/x-www-form-urlencoded
 
+app.use("/api", apiProxy(computeHost, parseInt(computePort)));
 
-const router = newRouter(sheetService, computeService);
-app.use( "/api", router);
-
-// TODO: [Assignment 7] Replace the above app.use with the following
-//       line to proxy those to the compute service
-//
-// app.use("/api", apiProxy(computeHost, parseInt(computePort)));
 
 if (useSPA) {
   // Explicitly send public/index.html for /, regardless of STATIC value
@@ -66,60 +55,42 @@ app.post("/app", (req: Request, res: Response) => {
     const name = sheetName || "New Sheet";
 
     const sheet = newSheet(columns, rows, name);
-
-    const stored = sheetService.addSheet(sheet);
-    redirectToSheet(stored);
-
-    // TODO: [Assignment 7] remove the code above which stores
-    //       the sheet. Instead, do this:
-    //
-    // redirectToSheet(sheet);
+    redirectToSheet(sheet);
 
   } else {
     readCSV(template as string, templateDir)
       .then((sheet) => {
-        const stored = sheetService.addSheet(sheet);
-        redirectToSheet(stored);
+        redirectToSheet(sheet);
       })
       .catch((err: Error) => {
         res.status(404).send(`Error: file not found`);
       });
   }
 
-  function redirectToSheet(sheet: WithId<Sheet>) {
-
-    // TODO: [Assignment 7]
-    //       Change this function so it takes a 'Sheet', not a 'WithID<Sheet>'.
-    // 
-    //       Before you can redirect, you need
-    //       to use the REST API on the Compute Host and have
-    //       it create the Sheet. Use `fetch()` to make a POST request
-    //       to `/api/sheets` on the Compute Host. Send the
-    //       `sheet` in the body of your POST.
-    //
-    //       The response from that request will contain an `id`,
-    //       which you can then use to redirect users, as before.
-    //       Move the following line to inside the `.then()` and
-    //       edit it to use the id from the response.
-
-    res.redirect(`/app/${sheet.id}`)
+  function redirectToSheet(sheet: Sheet) {
+     fetch(`http://${computeHost}:${computePort}/api/sheets`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(sheet),
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to create sheet: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((createdSheet) => {
+      res.redirect(`/app/${createdSheet.id}`);
+    })
+    .catch((err: Error) => {
+      console.log("Could not create sheet:", err);
+      res.status(500).send("Error: could not create sheet");
+    });
   }
 });
 
-// Assignment 7: You can remove this route instead of updating
-//       it for the new services architecture. It hasn't been
-//       used since Assignment 1 (server-side rendering).
-
-app.get("/app/:id", (req: Request, res: Response) => {
-  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const sheet = sheetService.getSheetById(id);
-  if (sheet === undefined){
-    res.status(404).send("Error: Sheet not found")
-  }else{
-    const html = viewSheet(sheet);
-    res.status(200).send(html);
-  }
-});
 
 // Start the server
 const server = app.listen(port, () => {
@@ -127,6 +98,5 @@ const server = app.listen(port, () => {
   `Server listening at port ${port} at IPv4 0.0.0.0`;
   console.log( showServerLocMsg );  
 });
+websockets(server, wsServer(sheetService, computeService));
 
-//enable websockets on HTTP server and pass the sheetService
-websockets(server, wsServer(sheetService, computeService)); 

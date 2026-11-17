@@ -29,44 +29,58 @@ function createProxy(targetHost: string, targetPort: number) {
 
   proxy.get("/sheets/:id", (req: Request, res: express.Response) => {
     fetchFromTarget(req)
-      .then((res) => {
-          // TODO: check the status, and return res.json()
-          //
-          //     You may want to throw a ProxyError (see class below)
-          //     to make it easier to catch and forward the same error
-          //     code to the client.
+      .then((targetResponse) => {
+        if (!targetResponse.ok) {
+          throw new ProxyError(targetResponse.status);
+        }
+        return targetResponse.json();
       })
       .then((json) => res.send(json))
       .catch((err: Error) => {
         console.log(`Proxy error for ${req.originalUrl}:`, err);
-        // TODO: if there was an error, set res.status() appropriately
-        //       and send the response. If the response from
-          //       fetchFromTarget had an error status, use the same
-          //       code in the reply to your client
+        
+        if (err instanceof ProxyError) {
+          return res.status(err.status).send(`Error: ${err.message}`);
+        }
+        return res.status(500).send(`Error: ${err.message}`);
       });
   });
 
   proxy.get("/sheets/:id/cells", (req: Request, res: express.Response) => {
     return fetchFromTarget(req)
-      .then((res) => {
-        // TODO: check the status, and return res.json()
+      .then((targetResponse) => {
+        if (!targetResponse.ok) {
+          throw new ProxyError(targetResponse.status);
+        }
+        return targetResponse.json();
       })
       .then((json) => res.send(json))
       .catch((err: Error) => {
-        // TODO: if there was an error, set res.status() appropriately
-        //       and send the response.
+        console.log(`Proxy error for ${req.originalUrl}:`, err);
+        
+        if (err instanceof ProxyError) {
+          return res.status(err.status).send(`Error: ${err.message}`);
+        }
+        return res.status(500).send(`Error: ${err.message}`);
       });
   });
 
   proxy.patch("/sheets/:id/cells", (req: Request, res: express.Response) => {
     return fetchFromTarget(req)
-      .then((res) => {
-        // TODO: check the status, and return res.json()
+      .then((targetResponse) => {
+        if (!targetResponse.ok) {
+          throw new ProxyError(targetResponse.status);
+        }
+        return targetResponse.json();
       })
       .then((json) => res.send(json))
       .catch((err: Error) => {
-        // TODO: if there was an error, set res.status() appropriately
-        //       and send the response.
+        console.log(`Proxy error for ${req.originalUrl}:`, err);
+        
+        if (err instanceof ProxyError) {
+          return res.status(err.status).send(`Error: ${err.message}`);
+        }
+        return res.status(500).send(`Error: ${err.message}`);
       });
   });
 
